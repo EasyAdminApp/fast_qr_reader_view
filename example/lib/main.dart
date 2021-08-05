@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:fast_qr_reader_view/fast_qr_reader_view.dart';
 
-List<CameraDescription> cameras;
+import 'package:fast_qr_reader_view/fast_qr_reader_view.dart';
+import 'package:flutter/material.dart';
+
+List<CameraDescription>? cameras;
 
 Future<Null> main() async {
   // Fetch the available cameras before initializing the app.
@@ -10,7 +11,7 @@ Future<Null> main() async {
     WidgetsFlutterBinding.ensureInitialized();
     cameras = await availableCameras();
   } on QRReaderException catch (e) {
-    logError(e.code, e.description);
+    logError(e.code, e.description!);
   }
   runApp(new MyApp());
 }
@@ -24,9 +25,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  QRReaderController controller;
+  QRReaderController? controller;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  AnimationController animationController;
+  AnimationController? animationController;
 
   @override
   void initState() {
@@ -37,25 +38,25 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       duration: new Duration(seconds: 3),
     );
 
-    animationController.addListener(() {
+    animationController!.addListener(() {
       this.setState(() {});
     });
-    animationController.forward();
+    animationController!.forward();
     verticalPosition = Tween<double>(begin: 0.0, end: 300.0).animate(
-        CurvedAnimation(parent: animationController, curve: Curves.linear))
+        CurvedAnimation(parent: animationController!, curve: Curves.linear))
       ..addStatusListener((state) {
         if (state == AnimationStatus.completed) {
-          animationController.reverse();
+          animationController!.reverse();
         } else if (state == AnimationStatus.dismissed) {
-          animationController.forward();
+          animationController!.forward();
         }
       });
 
     // pick the first available camera
-    onNewCameraSelected(cameras[0]);
+    onNewCameraSelected(cameras![0]);
   }
 
-  Animation<double> verticalPosition;
+  Animation<double>? verticalPosition;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +95,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     ),
                   ),
                   Positioned(
-                    top: verticalPosition.value,
+                    top: verticalPosition!.value,
                     child: Container(
                       width: 300.0,
                       height: 2.0,
@@ -112,7 +113,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   /// Display the preview from the camera (or a message if the preview is not available).
   Widget _cameraPreviewWidget() {
-    if (controller == null || !controller.value.isInitialized) {
+    if (controller == null || !controller!.value.isInitialized) {
       return const Text(
         'No camera selected',
         style: const TextStyle(
@@ -123,8 +124,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       );
     } else {
       return new AspectRatio(
-        aspectRatio: controller.value.aspectRatio,
-        child: new QRReaderPreview(controller),
+        aspectRatio: controller!.value.aspectRatio,
+        child: new QRReaderPreview(controller!),
       );
     }
   }
@@ -133,39 +134,39 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     showInSnackBar(value.toString());
     // ... do something
     // wait 5 seconds then start scanning again.
-    new Future.delayed(const Duration(seconds: 5), controller.startScanning);
+    new Future.delayed(const Duration(seconds: 5), controller!.startScanning);
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
     if (controller != null) {
-      await controller.dispose();
+      await controller!.dispose();
     }
-    controller = new QRReaderController(cameraDescription, ResolutionPreset.low,
-        CodeFormat.values, onCodeRead);
+    controller = new QRReaderController(
+        cameraDescription, ResolutionPreset.low, CodeFormat.values, onCodeRead);
 
     // If the controller is updated then update the UI.
-    controller.addListener(() {
+    controller!.addListener(() {
       if (mounted) setState(() {});
-      if (controller.value.hasError) {
-        showInSnackBar('Camera error ${controller.value.errorDescription}');
+      if (controller!.value.hasError) {
+        showInSnackBar('Camera error ${controller!.value.errorDescription}');
       }
     });
 
     try {
-      await controller.initialize();
+      await controller!.initialize();
     } on QRReaderException catch (e) {
-      logError(e.code, e.description);
-      showInSnackBar('Error: ${e.code}\n${e.description}');
+      logError(e.code, e.description!);
+      showInSnackBar('Error: ${e.code}\n${e.description!}');
     }
 
     if (mounted) {
       setState(() {});
-      controller.startScanning();
+      controller!.startScanning();
     }
   }
 
   void showInSnackBar(String message) {
-    _scaffoldKey.currentState
+    _scaffoldKey.currentState!
         .showSnackBar(new SnackBar(content: new Text(message)));
   }
 }
